@@ -5,6 +5,7 @@ import FaviconController from '@/components/FaviconController';
 import AdminContactButton from '@/components/AdminContactButton';
 import AdsController from '@/components/AdsController';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { Metadata, Viewport } from 'next';
 
 export const viewport: Viewport = {
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <p>© 2026 FTVision — <span className="text-orange-400/90 font-medium">Bilal Moubarek</span>. جميع الحقوق محفوظة.</p>
         </footer>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
