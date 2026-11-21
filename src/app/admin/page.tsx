@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [heroType, setHeroType] = useState('movie');
 
   // Ads Configuration
-  const [popunderAds, setPopunderAds] = useState(true);
+  const [popunderAds, setPopunderAds] = useState(false);
   const [bannerAds, setBannerAds] = useState(false);
   const [monetagTag, setMonetagTag] = useState('');
 
@@ -70,9 +70,9 @@ export default function AdminDashboard() {
     setNoticeColor(localStorage.getItem('ftvision_notice_color') || 'red');
     setHeroId(localStorage.getItem('ftvision_hero_id') || '37854');
     setHeroType(localStorage.getItem('ftvision_hero_type') || 'tv');
-    setPopunderAds(localStorage.getItem('ftvision_ads_popunder') !== 'false');
-    setBannerAds(localStorage.getItem('ftvision_ads_banner') === 'true');
-    setMonetagTag(localStorage.getItem('ftvision_monetag_tag') || '');
+    setPopunderAds(false);
+    setBannerAds(false);
+    setMonetagTag('');
     setDefaultServer(localStorage.getItem('ftvision_default_server') || '1');
     setContactSettings(getStoredContactSettings());
     loadMessages();
@@ -120,9 +120,9 @@ export default function AdminDashboard() {
     localStorage.setItem('ftvision_notice_color', noticeColor);
     localStorage.setItem('ftvision_hero_id', heroId);
     localStorage.setItem('ftvision_hero_type', heroType);
-    localStorage.setItem('ftvision_ads_popunder', popunderAds.toString());
-    localStorage.setItem('ftvision_ads_banner', bannerAds.toString());
-    localStorage.setItem('ftvision_monetag_tag', monetagTag);
+    localStorage.setItem('ftvision_ads_popunder_disabled', popunderAds.toString());
+    localStorage.setItem('ftvision_ads_banner', 'false');
+    localStorage.setItem('ftvision_monetag_tag_disabled', monetagTag);
     localStorage.setItem('ftvision_default_server', defaultServer);
     localStorage.setItem(CONTACT_STORAGE_KEY, JSON.stringify(contactSettings));
     window.dispatchEvent(new Event("ftvision-contact-updated"));
