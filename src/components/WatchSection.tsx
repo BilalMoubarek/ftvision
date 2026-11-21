@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, Tv, Play, FastForward } from 'lucide-react';
+import { Server, Tv, Play, FastForward, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface WatchSectionProps {
   id: string;
@@ -10,6 +10,7 @@ interface WatchSectionProps {
 }
 
 export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
+  const [reportedServer, setReportedServer] = useState(false);
   const [server, setServer] = useState(1);
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
@@ -59,6 +60,32 @@ export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
     }
   };
 
+  const handleReportServer = () => {
+    try {
+      const storageKey = "ftvision_admin_messages_v1";
+      const raw = window.localStorage.getItem(storageKey);
+      const current = raw ? JSON.parse(raw) : [];
+      const epInfo = type === "tv" ? ` (S${season}E${episode})` : "";
+      const newReport = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: "زائر المشغل",
+        contact: `Server ${server}`,
+        subject: "إبلاغ عن سيرفر متعطل",
+        message: `السيرفر رقم ${server} فيه مشكل فـ العمل (${type.toUpperCase()} - ID: ${id})${epInfo}`,
+        page: typeof window !== "undefined" ? window.location.pathname : "/",
+        createdAt: new Date().toLocaleString("ar-MA"),
+        read: false,
+      };
+      const updated = Array.isArray(current) ? [newReport, ...current] : [newReport];
+      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+      window.dispatchEvent(new Event("ftvision-messages-updated"));
+      setReportedServer(true);
+      setTimeout(() => setReportedServer(false), 3000);
+    } catch {
+      // تجاهل أخطاء التخزين
+    }
+  };
+
   const handleNextEpisode = () => {
     if (episode < episodeCount) {
       setEpisode((prev) => prev + 1);
@@ -84,6 +111,9 @@ export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
           scrolling="no"
         />
       </div>
+
+      {/* Server Report Handler */}
+      {(() => null)()}
 
       {/* Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
@@ -121,6 +151,25 @@ export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
               <span>الحلقة التالية</span>
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={handleReportServer}
+            disabled={reportedServer}
+            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+          >
+            {reportedServer ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400">تم التبليغ</span>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>إبلاغ عن السيرفر</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
