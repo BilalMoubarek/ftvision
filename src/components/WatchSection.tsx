@@ -12,6 +12,9 @@ interface WatchSectionProps {
 
 export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
   const [reportedServer, setReportedServer] = useState(false);
+  const [server, setServer] = useState(1);
+  const [season, setSeason] = useState(1);
+  const [episode, setEpisode] = useState(1);
 
   useEffect(() => {
     const docTitle = typeof document !== "undefined" ? document.title.replace(" - FTVision", "").trim() : "";
@@ -23,9 +26,6 @@ export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
       episode,
     });
   }, [id, type, season, episode]);
-  const [server, setServer] = useState(1);
-  const [season, setSeason] = useState(1);
-  const [episode, setEpisode] = useState(1);
 
   // Qra l-Default Server lli khtarti f-Admin Panel
   useEffect(() => {
