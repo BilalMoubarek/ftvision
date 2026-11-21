@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useEffect } from 'react';
 import { Server, Tv, Play, FastForward, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { saveWatchHistory } from '@/components/ContinueWatching';
 
 interface WatchSectionProps {
   id: string;
@@ -11,6 +12,17 @@ interface WatchSectionProps {
 
 export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
   const [reportedServer, setReportedServer] = useState(false);
+
+  useEffect(() => {
+    const docTitle = typeof document !== "undefined" ? document.title.replace(" - FTVision", "").trim() : "";
+    saveWatchHistory({
+      id: String(id),
+      type,
+      title: docTitle || (type === "tv" ? `مسلسل #${id}` : `فيلم #${id}`),
+      season,
+      episode,
+    });
+  }, [id, type, season, episode]);
   const [server, setServer] = useState(1);
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);

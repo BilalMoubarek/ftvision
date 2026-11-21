@@ -1,69 +1,137 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { PlayCircle, Clock, X } from 'lucide-react';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Play, Clock, X } from "lucide-react";
+
+export interface WatchHistoryItem {
+  id: string;
+  type: "movie" | "tv";
+  title: string;
+  poster?: string;
+  season?: number;
+  episode?: number;
+  updatedAt: number;
+}
+
+const HISTORY_KEY = "ftvision_continue_watching_v1";
+
+export function saveWatchHistory(item: Omit<WatchHistoryItem, "updatedAt">) {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    const list: WatchHistoryItem[] = raw ? JSON.parse(raw) : [];
+    const filtered = Array.isArray(list)
+      ? list.filter((x) => !(String(x.id) === String(item.id) && x.type === item.type))
+      : [];
+    const next: WatchHistoryItem[] = [{ ...item, updatedAt: Date.now() }, ...filtered].slice(0, 12);
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("ftvision-history-updated"));
+  } catch {
+    // تجاهل أخطاء التخزين
+  }
+}
 
 export default function ContinueWatching() {
-  const [history, setHistory] = useState<any[]>([]);
+  const [items, setItems] = useState<WatchHistoryItem[]>([]);
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('ftvision_history') || '[]');
-    setHistory(saved.slice(0, 4));
-  }, []);
-
-  const removeItem = (id: string) => {
-    const updated = history.filter((item) => item.id !== id);
-    setHistory(updated);
-    localStorage.setItem('ftvision_history', JSON.stringify(updated));
+  const loadHistory = () => {
+    try {
+      const raw = window.localStorage.getItem(HISTORY_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      setItems(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setItems([]);
+    }
   };
 
-  if (history.length === 0) return null;
+  useEffect(() => {
+    loadHistory();
+    window.addEventListener("ftvision-history-updated", loadHistory);
+    window.addEventListener("storage", loadHistory);
+    return () => {
+      window.removeEventListener("ftvision-history-updated", loadHistory);
+      window.removeEventListener("storage", loadHistory);
+    };
+  }, []);
+
+  const removeItem = (e: React.MouseEvent, id: string, type: "movie" | "tv") => {
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = items.filter((x) => !(String(x.id) === String(id) && x.type === type));
+    setItems(updated);
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  };
+
+  if (items.length === 0) return null;
 
   return (
-    <div className="space-y-4 my-6">
-      <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3">
-        <Clock className="w-5 h-5 text-red-500" />
-        <h2 className="text-lg font-black text-white">متابعة المشاهدة (Continue Watching)</h2>
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-black text-white">
+          <Clock className="w-5 h-5 text-orange-500" />
+          <span>متابعة المشاهدة</span>
+        </h2>
+        <span className="text-xs text-slate-400">{items.length} أعمال</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {history.map((item) => (
-          <div
-            key={item.id}
-            className="bg-slate-900 border border-slate-800/80 rounded-2xl p-3 flex items-center gap-3 relative group hover:border-red-500/40 transition"
-          >
-            <img
-              src={item.poster ? `https://image.tmdb.org/t/p/w185${item.poster}` : 'https://via.placeholder.com/185'}
-              alt={item.title}
-              className="w-14 h-20 object-cover rounded-xl border border-slate-800"
-            />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {items.map((item) => {
+          const href =
+            item.type === "tv"
+              ? `/watch/tv/${item.id}?season=${item.season || 1}&episode=${item.episode || 1}`
+              : `/watch/movie/${item.id}`;
 
-            <div className="flex-1 space-y-1">
-              <h4 className="text-xs font-bold text-white truncate max-w-[140px]">{item.title}</h4>
-              {item.type === 'tv' && (
-                <span className="text-[10px] text-red-400 bg-red-600/10 px-2 py-0.5 rounded font-bold inline-block">
-                  الموسم {item.season} - الحلقة {item.episode}
-                </span>
-              )}
-              
-              <Link
-                href={`/watch/${item.type}/${item.id}`}
-                className="mt-2 text-[11px] bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1 rounded-lg transition inline-flex items-center gap-1 shadow-md shadow-red-600/20"
-              >
-                <PlayCircle className="w-3.5 h-3.5" /> استكمال
-              </Link>
-            </div>
-
-            <button
-              onClick={() => removeItem(item.id)}
-              className="absolute top-2 left-2 text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition"
+          return (
+            <div
+              key={`${item.type}-${item.id}`}
+              className="group relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-orange-500/50 transition"
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
+              <Link href={href} className="block">
+                <div className="relative aspect-[2/3] w-full bg-slate-950 overflow-hidden">
+                  {item.poster ? (
+                    <img
+                      src={item.poster}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-slate-500">
+                      FTVision
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-90" />
+
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <span className="w-11 h-11 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-lg">
+                      <Play className="w-5 h-5 fill-current mr-0.5" />
+                    </span>
+                  </div>
+
+                  {item.type === "tv" && (
+                    <span className="absolute top-2 right-2 rounded-lg bg-slate-950/90 border border-slate-700/80 px-2 py-0.5 text-[11px] font-bold text-orange-400">
+                      م{item.season || 1} • ح{item.episode || 1}
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-2.5">
+                  <p className="text-xs font-bold text-white truncate">{item.title}</p>
+                </div>
+              </Link>
+
+              <button
+                type="button"
+                onClick={(e) => removeItem(e, item.id, item.type)}
+                aria-label="إزالة من متابعة المشاهدة"
+                className="absolute top-2 left-2 w-6 h-6 rounded-full bg-slate-950/80 text-slate-400 hover:text-red-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 }
