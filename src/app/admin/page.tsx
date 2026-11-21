@@ -60,8 +60,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    const isAuth = null;
-    if (isAuth === 'true') setAuthenticated(true);
+    setAuthenticated(false);
 
     setSiteName(localStorage.getItem('ftvision_site_name') || 'FTVISION');
     setSiteDesc(localStorage.getItem('ftvision_site_desc') || 'منصة FTVision لمشاهدة أحدث الأنميات والأفلام بجودة عالية وسيرفرات سريعة.');
@@ -227,7 +226,7 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => {
-              sessionStorage.removeItem('ftvision_admin_auth');
+              
               setAuthenticated(false);
             }}
             className="text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-3 py-2.5 rounded-xl transition"
