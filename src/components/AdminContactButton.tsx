@@ -1,8 +1,10 @@
-"use client";
+node -e '
+const fs = require("fs");
+const code = `"use client";
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, X, CheckCircle2 } from "lucide-react";
 
 export interface ContactSettings {
   showContactButton: boolean;
@@ -10,11 +12,21 @@ export interface ContactSettings {
   contactLabel: string;
 }
 
+export interface VisitorMessage {
+  id: string;
+  topic: string;
+  message: string;
+  page: string;
+  createdAt: string;
+  read: boolean;
+}
+
 export const CONTACT_STORAGE_KEY = "ftvision_admin_contact_v1";
+export const MESSAGES_STORAGE_KEY = "ftvision_admin_messages_v1";
 
 export const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
   showContactButton: true,
-  contactUrl: "mailto:bilaltest47@gmail.com",
+  contactUrl: "",
   contactLabel: "تواصل مع الأدمن",
 };
 
@@ -30,7 +42,7 @@ export function getStoredContactSettings(): ContactSettings {
           ? parsed.showContactButton
           : DEFAULT_CONTACT_SETTINGS.showContactButton,
       contactUrl:
-        typeof parsed.contactUrl === "string" && parsed.contactUrl.trim()
+        typeof parsed.contactUrl === "string"
           ? parsed.contactUrl.trim()
           : DEFAULT_CONTACT_SETTINGS.contactUrl,
       contactLabel:
@@ -43,6 +55,18 @@ export function getStoredContactSettings(): ContactSettings {
   }
 }
 
+export function getStoredVisitorMessages(): VisitorMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(MESSAGES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function AdminContactButton() {
   const pathname = usePathname();
   const [settings, setSettings] = useState<ContactSettings>(
@@ -51,6 +75,7 @@ export default function AdminContactButton() {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("طلب فيلم / أنمي");
   const [message, setMessage] = useState("");
+  const [sentSuccess, setSentSuccess] = useState(false);
 
   useEffect(() => {
     setSettings(getStoredContactSettings());
@@ -73,34 +98,29 @@ export default function AdminContactButton() {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    const text = `[FTVision - ${topic}] ${message.trim() || "سلام أدمن"}`;
-    const target = settings.contactUrl || DEFAULT_CONTACT_SETTINGS.contactUrl;
+    const cleanText = message.trim();
+    if (!cleanText) return;
 
-    if (target.startsWith("mailto:")) {
-      const sep = target.includes("?") ? "&" : "?";
-      window.location.href = `${target}${sep}subject=${encodeURIComponent(
-        `FTVision: ${topic}`
-      )}&body=${encodeURIComponent(text)}`;
-    } else if (target.includes("wa.me") || target.includes("whatsapp.com")) {
-      const sep = target.includes("?") ? "&" : "?";
-      window.open(
-        `${target}${sep}text=${encodeURIComponent(text)}`,
-        "_blank",
-        "noopener,noreferrer"
-      );
-    } else if (target.includes("t.me")) {
-      const sep = target.includes("?") ? "&" : "?";
-      window.open(
-        `${target}${sep}text=${encodeURIComponent(text)}`,
-        "_blank",
-        "noopener,noreferrer"
-      );
-    } else {
-      window.open(target, "_blank", "noopener,noreferrer");
-    }
+    const newMsg: VisitorMessage = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      topic,
+      message: cleanText,
+      page: pathname || "/",
+      createdAt: new Date().toLocaleString("ar-MA"),
+      read: false,
+    };
+
+    const existing = getStoredVisitorMessages();
+    const updated = [newMsg, ...existing];
+    window.localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("ftvision-messages-updated"));
 
     setMessage("");
-    setOpen(false);
+    setSentSuccess(true);
+    setTimeout(() => {
+      setSentSuccess(false);
+      setOpen(false);
+    }, 1100);
   };
 
   return (
@@ -129,49 +149,61 @@ export default function AdminContactButton() {
               </button>
             </div>
 
-            <form onSubmit={handleSend} className="space-y-3">
-              <div>
-                <label className="mb-1 block text-xs text-zinc-400">
-                  نوع الرسالة
-                </label>
-                <select
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-red-500 focus:outline-none"
+            {sentSuccess ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <CheckCircle2 className="mb-2 h-8 w-8 text-emerald-500" />
+                <p className="text-xs font-medium text-emerald-400">
+                  تم إرسال رسالتك إلى لوحة الأدمن بنجاح
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSend} className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs text-zinc-400">
+                    نوع الرسالة
+                  </label>
+                  <select
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-red-500 focus:outline-none"
+                  >
+                    <option value="طلب فيلم / أنمي">طلب فيلم / أنمي</option>
+                    <option value="إبلاغ عن سيرفر أو حلقة">
+                      إبلاغ عن سيرفر أو حلقة
+                    </option>
+                    <option value="اقتراح أو ملاحظة">اقتراح أو ملاحظة</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs text-zinc-400">
+                    التفاصيل (اسم العمل أو رقم الحلقة)
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="مثلاً: زيد الحلقة الجديدة أو شوف السيرفر رقم 2..."
+                    className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white placeholder:text-zinc-500 focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 py-2 text-xs font-medium text-white transition hover:bg-red-500"
                 >
-                  <option value="طلب فيلم / أنمي">طلب فيلم / أنمي</option>
-                  <option value="إبلاغ عن سيرفر أو حلقة">
-                    إبلاغ عن سيرفر أو حلقة
-                  </option>
-                  <option value="اقتراح أو ملاحظة">اقتراح أو ملاحظة</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs text-zinc-400">
-                  التفاصيل (اسم العمل أو رقم الحلقة)
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="مثلاً: زيد الحلقة الجديدة أو شوف السيرفر رقم 2..."
-                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white placeholder:text-zinc-500 focus:border-red-500 focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 py-2 text-xs font-medium text-white transition hover:bg-red-500"
-              >
-                <Send className="h-3.5 w-3.5" />
-                <span>إرسال التواصل</span>
-              </button>
-            </form>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>إرسال إلى الأدمن</span>
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}
     </>
   );
 }
+`;
+fs.writeFileSync("src/components/AdminContactButton.tsx", code, "utf8");
+'

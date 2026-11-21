@@ -4,14 +4,24 @@ import { useState, useEffect } from 'react';
 import {
   Lock, Save, ShieldCheck, Megaphone, Tv, DollarSign,
   Server, LayoutDashboard, Search, RefreshCw, CheckCircle2,
-  AlertCircle, Sliders, Eye, Palette, Globe, Code, Image
+  AlertCircle, Sliders, Eye, Palette, Globe, Code, MessageSquare, Trash2, Check
 } from 'lucide-react';
+import {
+  CONTACT_STORAGE_KEY,
+  MESSAGES_STORAGE_KEY,
+  ContactSettings,
+  VisitorMessage,
+  DEFAULT_CONTACT_SETTINGS,
+  getStoredContactSettings,
+  getStoredVisitorMessages,
+} from "@/components/AdminContactButton";
 
 export default function AdminDashboard() {
   const [authenticated, setAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState('');
-  const [activeTab, setActiveTab] = useState<'stats' | 'branding' | 'content' | 'ads' | 'servers' | 'tmdb'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'branding' | 'content' | 'ads' | 'servers' | 'tmdb' | 'messages'>('stats');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [contactSavedSuccess, setContactSavedSuccess] = useState(false);
 
   // Settings State
   const [siteName, setSiteName] = useState('FTVISION');
@@ -21,7 +31,7 @@ export default function AdminDashboard() {
   const [noticeColor, setNoticeColor] = useState('red');
   const [heroId, setHeroId] = useState('');
   const [heroType, setHeroType] = useState('movie');
-  
+
   // Ads Configuration
   const [popunderAds, setPopunderAds] = useState(true);
   const [bannerAds, setBannerAds] = useState(false);
@@ -29,6 +39,10 @@ export default function AdminDashboard() {
 
   // Servers
   const [defaultServer, setDefaultServer] = useState('1');
+
+  // Contact Button Settings & Visitor Messages
+  const [contactSettings, setContactSettings] = useState<ContactSettings>(DEFAULT_CONTACT_SETTINGS);
+  const [visitorMessages, setVisitorMessages] = useState<VisitorMessage[]>([]);
 
   // TMDB Explorer
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,11 +55,14 @@ export default function AdminDashboard() {
 
   const ADMIN_PASS = 'ftvision2026';
 
+  const loadMessages = () => {
+    setVisitorMessages(getStoredVisitorMessages());
+  };
+
   useEffect(() => {
     const isAuth = sessionStorage.getItem('ftvision_admin_auth');
     if (isAuth === 'true') setAuthenticated(true);
 
-    // Load saved config
     setSiteName(localStorage.getItem('ftvision_site_name') || 'FTVISION');
     setSiteDesc(localStorage.getItem('ftvision_site_desc') || 'منصة FTVision لمشاهدة أحدث الأنميات والأفلام بجودة عالية وسيرفرات سريعة.');
     setSiteFavicon(localStorage.getItem('ftvision_site_favicon') || '');
@@ -57,11 +74,21 @@ export default function AdminDashboard() {
     setBannerAds(localStorage.getItem('ftvision_ads_banner') === 'true');
     setMonetagTag(localStorage.getItem('ftvision_monetag_tag') || '');
     setDefaultServer(localStorage.getItem('ftvision_default_server') || '1');
+    setContactSettings(getStoredContactSettings());
+    loadMessages();
 
     const watchlist = JSON.parse(localStorage.getItem('ftvision_watchlist') || '[]');
     setSavedItemsCount(watchlist.length);
 
     checkApiConnection();
+
+    const handleMsgEvent = () => loadMessages();
+    window.addEventListener("storage", handleMsgEvent);
+    window.addEventListener("ftvision-messages-updated", handleMsgEvent);
+    return () => {
+      window.removeEventListener("storage", handleMsgEvent);
+      window.removeEventListener("ftvision-messages-updated", handleMsgEvent);
+    };
   }, []);
 
   const checkApiConnection = async () => {
@@ -98,12 +125,36 @@ export default function AdminDashboard() {
     localStorage.setItem('ftvision_ads_banner', bannerAds.toString());
     localStorage.setItem('ftvision_monetag_tag', monetagTag);
     localStorage.setItem('ftvision_default_server', defaultServer);
+    localStorage.setItem(CONTACT_STORAGE_KEY, JSON.stringify(contactSettings));
+    window.dispatchEvent(new Event("ftvision-contact-updated"));
 
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
       window.location.reload();
     }, 1500);
+  };
+
+  const saveContactSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    window.localStorage.setItem(CONTACT_STORAGE_KEY, JSON.stringify(contactSettings));
+    window.dispatchEvent(new Event("ftvision-contact-updated"));
+    setContactSavedSuccess(true);
+    setTimeout(() => setContactSavedSuccess(false), 2000);
+  };
+
+  const toggleReadMessage = (id: string) => {
+    const updated = visitorMessages.map((m) =>
+      m.id === id ? { ...m, read: !m.read } : m
+    );
+    setVisitorMessages(updated);
+    window.localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(updated));
+  };
+
+  const deleteMessage = (id: string) => {
+    const updated = visitorMessages.filter((m) => m.id !== id);
+    setVisitorMessages(updated);
+    window.localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(updated));
   };
 
   const handleTmdbSearch = async (e: React.FormEvent) => {
@@ -121,6 +172,8 @@ export default function AdminDashboard() {
       setIsSearching(false);
     }
   };
+
+  const unreadCount = visitorMessages.filter((m) => !m.read).length;
 
   if (!authenticated) {
     return (
@@ -155,7 +208,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-red-600/10 border border-red-500/20 rounded-2xl text-red-500">
@@ -163,7 +215,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <h1 className="text-2xl font-black text-white">مركز التحكم الشامل (Admin Control)</h1>
-            <p className="text-xs text-slate-400">تخصيص اللوجو، الفافيكون، الإعلانات، والسيرفرات الحية</p>
+            <p className="text-xs text-slate-400">تخصيص اللوجو، الفافيكون، الإعلانات، الرسائل، والسيرفرات الحية</p>
           </div>
         </div>
 
@@ -201,6 +253,20 @@ export default function AdminDashboard() {
           }`}
         >
           <LayoutDashboard className="w-4 h-4" /> حالة النظام
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('messages'); loadMessages(); }}
+          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-bold transition whitespace-nowrap ${
+            activeTab === 'messages' ? 'border-red-500 text-red-500' : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" /> رسائل الزوار
+          {unreadCount > 0 && (
+            <span className="bg-red-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+              {unreadCount}
+            </span>
+          )}
         </button>
 
         <button
@@ -264,9 +330,9 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-2">
-            <span className="text-xs font-bold text-slate-400">عناصر المفضلة</span>
-            <div className="text-3xl font-black text-white">{savedItemsCount}</div>
-            <p className="text-[11px] text-slate-500">عدد الأعمال المحفوظة فـ LocalStorage</p>
+            <span className="text-xs font-bold text-slate-400">رسائل الزوار الجديدة</span>
+            <div className="text-3xl font-black text-white">{unreadCount}</div>
+            <p className="text-[11px] text-slate-500">إجمالي الرسائل المحفوظة: {visitorMessages.length}</p>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-2">
@@ -274,6 +340,126 @@ export default function AdminDashboard() {
             <div className="text-2xl font-black text-red-500">سيرفر {defaultServer}</div>
             <p className="text-[11px] text-slate-500">VidSrc / 2Embed Provider</p>
           </div>
+        </div>
+      )}
+
+      {/* Tab Messages */}
+      {activeTab === 'messages' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-red-500" /> الرسائل والطلبات الواردة من الزوار
+              </h3>
+              <button
+                type="button"
+                onClick={loadMessages}
+                className="text-xs text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> تحديث
+              </button>
+            </div>
+
+            {visitorMessages.length === 0 ? (
+              <p className="text-xs text-slate-400 py-6 text-center">
+                لا توجد رسائل واردة حالياً. عندما يرسل زائر رسالة من زر التواصل، ستظهر هنا مباشرة.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {visitorMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      msg.read
+                        ? "bg-slate-950/60 border-slate-800/70 opacity-75"
+                        : "bg-slate-950 border-red-500/30"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-bold text-red-400">{msg.topic}</span>
+                        {!msg.read && (
+                          <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">
+                            جديد
+                          </span>
+                        )}
+                        <span className="text-[11px] text-slate-500">{msg.createdAt}</span>
+                        <span className="text-[11px] text-slate-500">• {msg.page}</span>
+                      </div>
+                      <p className="text-xs text-slate-100 whitespace-pre-wrap">{msg.message}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleReadMessage(msg.id)}
+                        className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        {msg.read ? "غير مقروء" : "تمت القراءة"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteMessage(msg.id)}
+                        className="text-xs bg-red-950/70 hover:bg-red-900 text-red-300 px-3 py-1.5 rounded-lg flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> حذف
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <form
+            onSubmit={saveContactSettings}
+            className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-6"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-white">
+                إعدادات زر التواصل السريع مع الأدمن
+              </span>
+              <input
+                type="checkbox"
+                checked={contactSettings.showContactButton}
+                onChange={(e) =>
+                  setContactSettings({
+                    ...contactSettings,
+                    showContactButton: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 accent-red-600"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-slate-400">نص الزر</label>
+              <input
+                type="text"
+                value={contactSettings.contactLabel}
+                onChange={(e) =>
+                  setContactSettings({
+                    ...contactSettings,
+                    contactLabel: e.target.value,
+                  })
+                }
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                className="rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-red-700"
+              >
+                حفظ إعدادات الزر
+              </button>
+              {contactSavedSuccess && (
+                <span className="text-xs text-emerald-400 font-bold">تم الحفظ!</span>
+              )}
+            </div>
+          </form>
         </div>
       )}
 
