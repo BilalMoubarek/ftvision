@@ -1,4 +1,3 @@
-cat << 'EOF' > src/components/AdminContactButton.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
