@@ -34,8 +34,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <AdminContactButton />
-        <footer className="bg-slate-900 border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
-          <p>© 2026 FTVision. جميع الحقوق محفوظة.</p>
+        <footer className="bg-slate-900 border-t border-slate-800/60 py-6 text-center text-xs text-slate-500 space-y-2">
+          <div className="flex items-center justify-center gap-3 text-[11px] text-slate-500/80">
+            <a
+              href="https://www.instagram.com/mr.s.py_?evlk=MWpxZG83bWhvczlieA%3D%3D&utm_source=qr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-orange-400 transition"
+            >
+              Instagram
+            </a>
+            <span className="text-slate-700">•</span>
+            <a
+              href="https://t.me/mr_spy_404"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-orange-400 transition"
+            >
+              Telegram
+            </a>
+          </div>
+          <p>© 2026 FTVision — <span className="text-orange-400/90 font-medium">Bilal Moubarek</span>. جميع الحقوق محفوظة.</p>
         </footer>
       </body>
     </html>
