@@ -60,7 +60,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    const isAuth = sessionStorage.getItem('ftvision_admin_auth');
+    const isAuth = null;
     if (isAuth === 'true') setAuthenticated(true);
 
     setSiteName(localStorage.getItem('ftvision_site_name') || 'FTVISION');
@@ -107,8 +107,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (passcode === ADMIN_PASS) {
       setAuthenticated(true);
-      sessionStorage.setItem('ftvision_admin_auth', 'true');
-    } else {
+      } else {
       alert('رمز المرور غير صحيح!');
     }
   };

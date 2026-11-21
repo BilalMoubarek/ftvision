@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Server, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { MESSAGES_STORAGE_KEY, VisitorMessage, getStoredVisitorMessages } from "@/components/AdminContactButton";
 
 interface VideoPlayerProps {
   id: string;
@@ -12,7 +11,13 @@ interface VideoPlayerProps {
   episode?: number;
 }
 
-export default function VideoPlayer({ id, type, title = "العمل الحالي", season = 1, episode = 1 }: VideoPlayerProps) {
+export default function VideoPlayer({
+  id,
+  type,
+  title = "العمل الحالي",
+  season = 1,
+  episode = 1,
+}: VideoPlayerProps) {
   const [selectedServer, setSelectedServer] = useState<number>(1);
   const [reported, setReported] = useState<boolean>(false);
 
@@ -47,22 +52,31 @@ export default function VideoPlayer({ id, type, title = "العمل الحالي
   };
 
   const handleReport = () => {
-    const reportMsg: VisitorMessage = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      topic: "إبلاغ عن سيرفر متعطل",
-      message: `السيرفر رقم ${selectedServer} يتضمن مشكلة فـ تشغيل: ${title} (TMDB ID: ${id})`,
-      page: typeof window !== "undefined" ? window.location.pathname : "/",
-      createdAt: new Date().toLocaleString("ar-MA"),
-      read: false,
-    };
+    try {
+      const storageKey = "ftvision_admin_messages_v1";
+      const raw = window.localStorage.getItem(storageKey);
+      const current = raw ? JSON.parse(raw) : [];
 
-    const existing = getStoredVisitorMessages();
-    const updated = [reportMsg, ...existing];
-    window.localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("ftvision-messages-updated"));
+      const newReport = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: "زائر المشغل",
+        contact: `Server ${selectedServer}`,
+        subject: "إبلاغ عن سيرفر متعطل",
+        message: `السيرفر رقم ${selectedServer} فيه مشكل فـ: ${title} (${type.toUpperCase()} - ID: ${id})`,
+        page: typeof window !== "undefined" ? window.location.pathname : "/",
+        createdAt: new Date().toLocaleString("ar-MA"),
+        read: false,
+      };
 
-    setReported(true);
-    setTimeout(() => setReported(false), 3000);
+      const updated = Array.isArray(current) ? [newReport, ...current] : [newReport];
+      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+      window.dispatchEvent(new Event("ftvision-messages-updated"));
+
+      setReported(true);
+      setTimeout(() => setReported(false), 3000);
+    } catch {
+      // تجاهل أي خطأ في التخزين
+    }
   };
 
   return (
@@ -107,12 +121,12 @@ export default function VideoPlayer({ id, type, title = "العمل الحالي
           type="button"
           onClick={handleReport}
           disabled={reported}
-          className="flex items-center gap-1.5 rounded-xl bg-red-950/60 border border-red-500/30 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900/50 transition"
+          className="flex items-center gap-1.5 rounded-xl bg-red-950/60 border border-red-500/30 px-3.5 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900/50 transition cursor-pointer"
         >
           {reported ? (
             <>
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-emerald-400">تم التبليغ بنجاح</span>
+              <span className="text-emerald-400">تم إرسال البلاغ للأدمن</span>
             </>
           ) : (
             <>
