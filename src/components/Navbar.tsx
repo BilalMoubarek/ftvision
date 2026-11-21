@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Film, Tv, Heart, Grid, Menu, X, Search } from "lucide-react";
+import { Film, Tv, Heart, Grid, Menu, X, Search, Clapperboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
@@ -21,18 +21,33 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
-        {/* Logo - F Cinema Orange Badge */}
-        <Link href="/" className="flex items-center gap-3 group shrink-0">
-          <div className="flex flex-col text-right">
-            <span className="text-lg font-black tracking-wider text-white group-hover:text-orange-400 transition leading-tight">
-              FTVISION
+        {/* Logo - F Cinema Box on the RIGHT + Online Glow */}
+        <Link href="/" className="flex items-center gap-3 group shrink-0" dir="ltr">
+          {/* Logo Badge (F + Cinema Icon + Online Pulse) */}
+          <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-400 flex items-center justify-center font-black text-white text-2xl shadow-xl shadow-orange-500/40 ring-2 ring-orange-400/30 group-hover:scale-105 transition shrink-0">
+            <span>F</span>
+            
+            {/* Online Green Pulse Dot */}
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 ring-2 ring-slate-950" />
             </span>
-            <span className="text-[9px] font-bold text-orange-400/80 tracking-widest -mt-0.5">
-              STREAM HUB
+
+            {/* Cinema Clapper Icon Badge */}
+            <span className="absolute -bottom-1 -left-1 bg-slate-950/90 text-orange-400 p-0.5 rounded-md ring-1 ring-orange-500/40">
+              <Clapperboard className="w-3 h-3 animate-pulse" />
             </span>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-400 flex items-center justify-center font-black text-white text-2xl shadow-lg shadow-orange-500/40 ring-2 ring-orange-400/30 group-hover:scale-105 transition shrink-0">
-            F
+
+          {/* Text Title */}
+          <div className="flex flex-col text-left">
+            <span className="text-xl font-black tracking-wider text-white group-hover:text-orange-400 transition leading-none">
+              FTVISION
+            </span>
+            <span className="text-[9.5px] font-bold text-orange-400/90 tracking-widest mt-0.5 flex items-center gap-1">
+              <span>STREAM HUB</span>
+              <span className="w-1 h-1 rounded-full bg-emerald-400 inline-block" />
+            </span>
           </div>
         </Link>
 
