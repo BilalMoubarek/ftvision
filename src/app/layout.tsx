@@ -6,7 +6,7 @@ import AdminContactButton from '@/components/AdminContactButton';
 import type { Metadata, Viewport } from 'next';
 
 export const viewport: Viewport = {
-  themeColor: '#dc2626',
+  themeColor: '#f97316',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: 'FTVision - مشاهدة الأفلام والأنمي أونلاين',
   description: 'منصة FTVision لمشاهدة أحدث الأنميات والأفلام بجودة عالية وسيرفرات سريعة.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon-ftvision.svg',
+    shortcut: '/favicon-ftvision.svg',
+    apple: '/favicon-ftvision.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
