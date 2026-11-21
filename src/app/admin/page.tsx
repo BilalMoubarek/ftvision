@@ -53,7 +53,7 @@ export default function AdminDashboard() {
   const [apiStatus, setApiStatus] = useState<'testing' | 'online' | 'offline'>('testing');
   const [savedItemsCount, setSavedItemsCount] = useState(0);
 
-  const ADMIN_PASS = 'ftvision2026';
+  const ADMIN_PASS = 'bilal123';
 
   const loadMessages = () => {
     setVisitorMessages(getStoredVisitorMessages());
