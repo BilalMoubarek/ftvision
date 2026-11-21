@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Server, Tv, Play, FastForward, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { saveWatchHistory } from '@/components/ContinueWatching';
 
