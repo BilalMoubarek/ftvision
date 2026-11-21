@@ -1,6 +1,4 @@
-node -e '
-const fs = require("fs");
-const code = `"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -204,6 +202,3 @@ export default function AdminContactButton() {
     </>
   );
 }
-`;
-fs.writeFileSync("src/components/AdminContactButton.tsx", code, "utf8");
-'
