@@ -71,11 +71,7 @@ export default async function WatchPage({ params }: PageProps) {
 
       {/* تفاصيل العمل وأزرار التحكم */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start shadow-xl">
-        <img
-          src={posterUrl}
-          alt={title}
-          className="w-48 md:w-56 rounded-2xl shadow-lg border border-slate-800 object-cover mx-auto md:mx-0"
-        />
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-400 flex items-center justify-center font-black text-white text-3xl shadow-xl shadow-orange-600/30 ring-1 ring-white/20 shrink-0">F</div>
 
         <div className="space-y-4 flex-1 w-full">
           <div className="flex flex-wrap items-center justify-between gap-4">
