@@ -6,7 +6,7 @@ import { saveWatchHistory } from '@/components/ContinueWatching';
 
 interface WatchSectionProps {
   id: string;
-  type: string;
+  type: "movie" | "tv" | string;
   seasons?: any[];
 }
 
@@ -16,16 +16,18 @@ export default function WatchSection({ id, type, seasons }: WatchSectionProps) {
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
 
+  const normalizedType: "movie" | "tv" = type === "tv" ? "tv" : "movie";
+
   useEffect(() => {
     const docTitle = typeof document !== "undefined" ? document.title.replace(" - FTVision", "").trim() : "";
     saveWatchHistory({
       id: String(id),
-      type,
-      title: docTitle || (type === "tv" ? `مسلسل #${id}` : `فيلم #${id}`),
+      type: normalizedType,
+      title: docTitle || (normalizedType === "tv" ? `مسلسل #${id}` : `فيلم #${id}`),
       season,
       episode,
     });
-  }, [id, type, season, episode]);
+  }, [id, normalizedType, season, episode]);
 
   // Qra l-Default Server lli khtarti f-Admin Panel
   useEffect(() => {
